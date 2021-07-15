@@ -1,0 +1,50 @@
+name: 'build-publish-deploy-crun'
+description: 'Build, publish and deploy Google Cloud Run'
+inputs:
+  json_key:  # id of input
+    description: 'JSON Service Account'
+    required: true
+    default: ''
+  image_name:  # id of input
+    description: 'Image Name'
+    required: true
+    default: ''
+  tag:  # id of input
+    description: 'Tag Docker Images'
+    required: true
+    default: 'main'
+runs:
+  using: "composite"
+  steps: 
+    - uses: actions/checkout@master
+
+
+    - name: Login to GCR
+      uses: docker/login-action@v1
+      with:
+        registry: gcr.io
+        username: _json_key
+        password: ${{ inputs.json_key }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+      with:
+        images: ${{ inputs.image_name }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        tag_with_sha: true
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@main
+      with:
+        service: hello-cloud-run 
+        image: ${{ inputs.image_name }}:${{ inputs.tag }}
+        credentials: ${{ inputs.json_key }}
+        flags: --port=80
