@@ -13,6 +13,10 @@ inputs:
     description: 'Tag Docker Images'
     required: true
     default: 'main'
+  name:  # id of input
+    description: 'name cloud run'
+    required: true
+    default: ''
 runs:
   using: "composite"
   steps: 
@@ -44,7 +48,7 @@ runs:
       id: deploy
       uses: google-github-actions/deploy-cloudrun@main
       with:
-        service: hello-cloud-run 
+        service: {{ inputs.name }}
         image: ${{ inputs.image_name }}:${{ inputs.tag }}
         credentials: ${{ inputs.json_key }}
         flags: --port=80
